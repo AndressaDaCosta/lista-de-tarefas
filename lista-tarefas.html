@@ -184,6 +184,20 @@
 
 			let tarefas = [];
 
+			// Carregar tarefas do localStorage ao inicializar
+			function carregarTarefas() {
+				const tarefasSalvas = localStorage.getItem('listaTarefas');
+				if (tarefasSalvas) {
+					tarefas = JSON.parse(tarefasSalvas);
+					renderizarLista();
+				}
+			}
+
+			// Salvar tarefas no localStorage
+			function salvarTarefas() {
+				localStorage.setItem('listaTarefas', JSON.stringify(tarefas));
+			}
+
 			function adicionarTarefa() {
 				const textoTarefa = inputTarefa.value.trim();
 
@@ -194,6 +208,9 @@
 
 				// Adicionar tarefa ao array
 				tarefas.push(textoTarefa);
+
+				// Salvar no localStorage
+				salvarTarefas();
 
 				// Criar elemento da tarefa
 				const tarefaItem = document.createElement('li');
@@ -227,6 +244,9 @@
 			function removerTarefa(index) {
 				// Remover do array
 				const tarefaRemovida = tarefas.splice(index, 1)[0];
+
+				// Salvar no localStorage
+				salvarTarefas();
 
 				// Recriar toda a lista
 				renderizarLista();
@@ -276,6 +296,9 @@
 					adicionarTarefa();
 				}
 			});
+
+			// Carregar tarefas ao inicializar a página
+			carregarTarefas();
 
 			console.log('Lista de tarefas inicializada');
 		</script>
