@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+	<head>
+		<meta charset="UTF-8" />
+		<meta
+			name="viewport"
+			content="width=device-width, initial-scale=1.0" />
+		<title>Semana 5 - Exercício 03 - Lista de Tarefas</title>
+		<style>
+			* {
+				margin: 0;
+				padding: 0;
+				box-sizing: border-box;
+			}
+
+			body {
+				font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+				background-color: #f8f9fa;
+				padding: 50px;
+			}
+
+			.container {
+				max-width: 600px;
+				margin: 0 auto;
+				background: white;
+				border-radius: 10px;
+				padding: 40px;
+				box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+			}
+
+			h1 {
+				color: #333;
+				margin-bottom: 30px;
+				text-align: center;
+			}
+
+			.input-container {
+				display: flex;
+				gap: 10px;
+				margin-bottom: 30px;
+			}
+
+			label {
+				display: block;
+				margin-bottom: 8px;
+				font-weight: 600;
+				color: #333;
+			}
+
+			input[type='text'] {
+				flex: 1;
+				padding: 12px;
+				border: 2px solid #dee2e6;
+				border-radius: 8px;
+				font-size: 16px;
+				transition: border-color 0.3s ease;
+			}
+
+			input[type='text']:focus {
+				outline: none;
+				border-color: #007bff;
+			}
+
+			.btn {
+				padding: 12px 24px;
+				background-color: #007bff;
+				color: white;
+				border: none;
+				border-radius: 8px;
+				font-size: 16px;
+				font-weight: 600;
+				cursor: pointer;
+				transition: background-color 0.3s ease;
+			}
+
+			.btn:hover {
+				background-color: #0056b3;
+			}
+
+			.lista-tarefas {
+				list-style: none;
+				padding: 0;
+			}
+
+			.tarefa-item {
+				background-color: #f8f9fa;
+				border: 1px solid #dee2e6;
+				border-radius: 8px;
+				padding: 15px;
+				margin-bottom: 10px;
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+				transition: background-color 0.3s ease;
+			}
+
+			.tarefa-item:hover {
+				background-color: #e9ecef;
+			}
+
+			.tarefa-texto {
+				flex: 1;
+				font-size: 16px;
+				color: #333;
+			}
+
+			.btn-remover {
+				background-color: #dc3545;
+				color: white;
+				border: none;
+				border-radius: 5px;
+				padding: 8px 12px;
+				font-size: 12px;
+				cursor: pointer;
+				transition: background-color 0.3s ease;
+			}
+
+			.btn-remover:hover {
+				background-color: #c82333;
+			}
+
+			.lista-vazia {
+				text-align: center;
+				color: #6c757d;
+				font-style: italic;
+				padding: 40px 20px;
+				background-color: #f8f9fa;
+				border-radius: 8px;
+				border: 2px dashed #dee2e6;
+			}
+
+			.contador-tarefas {
+				text-align: center;
+				margin-bottom: 20px;
+				color: #6c757d;
+			}
+
+			@media (max-width: 480px) {
+				.input-container {
+					flex-direction: column;
+				}
+			}
+		</style>
+	</head>
+	<body>
+		<div class="container">
+			<h1>Lista de Tarefas</h1>
+
+			<div>
+				<label for="tarefa">Tarefa:</label>
+				<div class="input-container">
+					<input
+						type="text"
+						id="tarefa"
+						placeholder="Digite uma nova tarefa..." />
+					<button
+						class="btn"
+						onclick="adicionarTarefa()">
+						Adicionar
+					</button>
+				</div>
+			</div>
+
+			<div class="contador-tarefas">
+				<span id="contador">0 tarefas</span>
+			</div>
+
+			<ul
+				class="lista-tarefas"
+				id="listaTarefas">
+				<li
+					class="lista-vazia"
+					id="listaVazia">
+					Nenhuma tarefa adicionada ainda. Adicione uma tarefa acima!
+				</li>
+			</ul>
+		</div>
+
+		<script>
+			const inputTarefa = document.getElementById('tarefa');
+			const listaTarefas = document.getElementById('listaTarefas');
+			const listaVazia = document.getElementById('listaVazia');
+			const contador = document.getElementById('contador');
+
+			let tarefas = [];
+
+			function adicionarTarefa() {
+				const textoTarefa = inputTarefa.value.trim();
+
+				if (textoTarefa === '') {
+					alert('Por favor, digite uma tarefa!');
+					return;
+				}
+
+				// Adicionar tarefa ao array
+				tarefas.push(textoTarefa);
+
+				// Criar elemento da tarefa
+				const tarefaItem = document.createElement('li');
+				tarefaItem.className = 'tarefa-item';
+
+				tarefaItem.innerHTML = `
+                <span class="tarefa-texto">${textoTarefa}</span>
+                <button class="btn-remover" onclick="removerTarefa(${
+					tarefas.length - 1
+				})">
+                    Remover
+                </button>
+            `;
+
+				// Esconder mensagem de lista vazia
+				listaVazia.style.display = 'none';
+
+				// Adicionar à lista
+				listaTarefas.appendChild(tarefaItem);
+
+				// Limpar input
+				inputTarefa.value = '';
+
+				// Atualizar contador
+				atualizarContador();
+
+				console.log('Tarefa adicionada:', textoTarefa);
+				console.log('Total de tarefas:', tarefas.length);
+			}
+
+			function removerTarefa(index) {
+				// Remover do array
+				const tarefaRemovida = tarefas.splice(index, 1)[0];
+
+				// Recriar toda a lista
+				renderizarLista();
+
+				console.log('Tarefa removida:', tarefaRemovida);
+				console.log('Total de tarefas:', tarefas.length);
+			}
+
+			function renderizarLista() {
+				// Limpar lista
+				listaTarefas.innerHTML = '';
+
+				if (tarefas.length === 0) {
+					// Mostrar mensagem de lista vazia
+					listaTarefas.appendChild(listaVazia);
+					listaVazia.style.display = 'block';
+				} else {
+					// Criar itens das tarefas
+					tarefas.forEach((tarefa, index) => {
+						const tarefaItem = document.createElement('li');
+						tarefaItem.className = 'tarefa-item';
+
+						tarefaItem.innerHTML = `
+                        <span class="tarefa-texto">${tarefa}</span>
+                        <button class="btn-remover" onclick="removerTarefa(${index})">
+                            Remover
+                        </button>
+                    `;
+
+						listaTarefas.appendChild(tarefaItem);
+					});
+				}
+
+				atualizarContador();
+			}
+
+			function atualizarContador() {
+				const total = tarefas.length;
+				contador.textContent = `${total} ${
+					total === 1 ? 'tarefa' : 'tarefas'
+				}`;
+			}
+
+			// Permitir adicionar tarefa pressionando Enter
+			inputTarefa.addEventListener('keypress', function (e) {
+				if (e.key === 'Enter') {
+					adicionarTarefa();
+				}
+			});
+
+			console.log('Lista de tarefas inicializada');
+		</script>
+	</body>
+</html>
