@@ -34,6 +34,15 @@
 				text-align: center;
 			}
 
+			h2 {
+				color: #333;
+				margin: 40px 0 20px 0;
+				text-align: center;
+				font-size: 1.5em;
+				border-top: 2px solid #dee2e6;
+				padding-top: 30px;
+			}
+
 			.input-container {
 				display: flex;
 				gap: 10px;
@@ -102,6 +111,23 @@
 				flex: 1;
 				font-size: 16px;
 				color: #333;
+			}
+
+			.tarefa-concluida {
+				text-decoration: line-through;
+				color: #6c757d;
+			}
+
+			.checkbox-container {
+				display: flex;
+				align-items: center;
+				gap: 10px;
+			}
+
+			input[type='checkbox'] {
+				width: 18px;
+				height: 18px;
+				cursor: pointer;
 			}
 
 			.btn-remover {
@@ -174,13 +200,36 @@
 					Nenhuma tarefa adicionada ainda. Adicione uma tarefa acima!
 				</li>
 			</ul>
+
+			<h2>Tarefas Concluídas</h2>
+			<div class="contador-tarefas">
+				<span id="contadorConcluidas">0 tarefas concluídas</span>
+			</div>
+
+			<ul
+				class="lista-tarefas"
+				id="listaTarefasConcluidas">
+				<li
+					class="lista-vazia"
+					id="listaConcluidasVazia">
+					Nenhuma tarefa concluída ainda.
+				</li>
+			</ul>
 		</div>
 
 		<script>
 			const inputTarefa = document.getElementById('tarefa');
 			const listaTarefas = document.getElementById('listaTarefas');
+			const listaTarefasConcluidas = document.getElementById(
+				'listaTarefasConcluidas'
+			);
 			const listaVazia = document.getElementById('listaVazia');
+			const listaConcluidasVazia = document.getElementById(
+				'listaConcluidasVazia'
+			);
 			const contador = document.getElementById('contador');
+			const contadorConcluidas =
+				document.getElementById('contadorConcluidas');
 
 			let tarefas = [];
 
@@ -189,7 +238,18 @@
 				const tarefasSalvas = localStorage.getItem('listaTarefas');
 				if (tarefasSalvas) {
 					tarefas = JSON.parse(tarefasSalvas);
-					renderizarLista();
+					// Migrar tarefas antigas (string) para novo formato (objeto)
+					tarefas = tarefas.map((tarefa) => {
+						if (typeof tarefa === 'string') {
+							return {
+								id: Date.now() + Math.random(), // ID único
+								texto: tarefa,
+								concluida: false
+							};
+						}
+						return tarefa;
+					});
+					renderizarListas();
 				}
 			}
 
@@ -206,72 +266,96 @@
 					return;
 				}
 
-				// Adicionar tarefa ao array
-				tarefas.push(textoTarefa);
+				// Adicionar tarefa ao array com status de não concluída
+				const novaTarefa = {
+					id: Date.now(), // ID único baseado no timestamp
+					texto: textoTarefa,
+					concluida: false
+				};
 
-				// Salvar no localStorage
-				salvarTarefas();
-
-				// Criar elemento da tarefa
-				const tarefaItem = document.createElement('li');
-				tarefaItem.className = 'tarefa-item';
-
-				tarefaItem.innerHTML = `
-                <span class="tarefa-texto">${textoTarefa}</span>
-                <button class="btn-remover" onclick="removerTarefa(${
-					tarefas.length - 1
-				})">
-                    Remover
-                </button>
-            `;
-
-				// Esconder mensagem de lista vazia
-				listaVazia.style.display = 'none';
-
-				// Adicionar à lista
-				listaTarefas.appendChild(tarefaItem);
-
-				// Limpar input
-				inputTarefa.value = '';
-
-				// Atualizar contador
-				atualizarContador();
-
-				console.log('Tarefa adicionada:', textoTarefa);
-				console.log('Total de tarefas:', tarefas.length);
-			}
-
-			function removerTarefa(index) {
-				// Remover do array
-				const tarefaRemovida = tarefas.splice(index, 1)[0];
+				tarefas.push(novaTarefa);
 
 				// Salvar no localStorage
 				salvarTarefas();
 
 				// Recriar toda a lista
-				renderizarLista();
+				renderizarListas();
 
-				console.log('Tarefa removida:', tarefaRemovida);
+				// Limpar input
+				inputTarefa.value = '';
+
+				console.log('Tarefa adicionada:', textoTarefa);
 				console.log('Total de tarefas:', tarefas.length);
 			}
 
-			function renderizarLista() {
-				// Limpar lista
+			function removerTarefa(id) {
+				// Encontrar e remover tarefa pelo ID
+				const index = tarefas.findIndex((tarefa) => tarefa.id === id);
+				if (index !== -1) {
+					const tarefaRemovida = tarefas.splice(index, 1)[0];
+					console.log('Tarefa removida:', tarefaRemovida.texto);
+				}
+
+				// Salvar no localStorage
+				salvarTarefas();
+
+				// Recriar toda a lista
+				renderizarListas();
+
+				console.log('Total de tarefas:', tarefas.length);
+			}
+
+			function alternarStatusTarefa(id) {
+				// Encontrar tarefa pelo ID e alterar status
+				const tarefa = tarefas.find((t) => t.id === id);
+				if (tarefa) {
+					tarefa.concluida = !tarefa.concluida;
+					console.log(
+						`Tarefa "${tarefa.texto}" ${
+							tarefa.concluida ? 'concluída' : 'desmarcada'
+						}`
+					);
+
+					// Salvar no localStorage
+					salvarTarefas();
+
+					// Recriar listas
+					renderizarListas();
+				}
+			}
+
+			function renderizarListas() {
+				renderizarTarefasPendentes();
+				renderizarTarefasConcluidas();
+				atualizarContadores();
+			}
+
+			function renderizarTarefasPendentes() {
+				// Limpar lista de tarefas pendentes
 				listaTarefas.innerHTML = '';
 
-				if (tarefas.length === 0) {
+				const tarefasPendentes = tarefas.filter((t) => !t.concluida);
+
+				if (tarefasPendentes.length === 0) {
 					// Mostrar mensagem de lista vazia
 					listaTarefas.appendChild(listaVazia);
 					listaVazia.style.display = 'block';
 				} else {
-					// Criar itens das tarefas
-					tarefas.forEach((tarefa, index) => {
+					// Criar itens das tarefas pendentes
+					tarefasPendentes.forEach((tarefa) => {
 						const tarefaItem = document.createElement('li');
 						tarefaItem.className = 'tarefa-item';
 
 						tarefaItem.innerHTML = `
-                        <span class="tarefa-texto">${tarefa}</span>
-                        <button class="btn-remover" onclick="removerTarefa(${index})">
+                        <div class="checkbox-container">
+                            <input type="checkbox" 
+                                   onchange="alternarStatusTarefa(${tarefa.id})"
+                                   ${tarefa.concluida ? 'checked' : ''}>
+                            <span class="tarefa-texto">${tarefa.texto}</span>
+                        </div>
+                        <button class="btn-remover" onclick="removerTarefa(${
+							tarefa.id
+						})">
                             Remover
                         </button>
                     `;
@@ -279,14 +363,56 @@
 						listaTarefas.appendChild(tarefaItem);
 					});
 				}
-
-				atualizarContador();
 			}
 
-			function atualizarContador() {
-				const total = tarefas.length;
-				contador.textContent = `${total} ${
-					total === 1 ? 'tarefa' : 'tarefas'
+			function renderizarTarefasConcluidas() {
+				// Limpar lista de tarefas concluídas
+				listaTarefasConcluidas.innerHTML = '';
+
+				const tarefasConcluidas = tarefas.filter((t) => t.concluida);
+
+				if (tarefasConcluidas.length === 0) {
+					// Mostrar mensagem de lista vazia
+					listaTarefasConcluidas.appendChild(listaConcluidasVazia);
+					listaConcluidasVazia.style.display = 'block';
+				} else {
+					// Criar itens das tarefas concluídas
+					tarefasConcluidas.forEach((tarefa) => {
+						const tarefaItem = document.createElement('li');
+						tarefaItem.className = 'tarefa-item';
+
+						tarefaItem.innerHTML = `
+                        <div class="checkbox-container">
+                            <input type="checkbox" 
+                                   onchange="alternarStatusTarefa(${tarefa.id})"
+                                   checked>
+                            <span class="tarefa-texto tarefa-concluida">${tarefa.texto}</span>
+                        </div>
+                        <button class="btn-remover" onclick="removerTarefa(${tarefa.id})">
+                            Remover
+                        </button>
+                    `;
+
+						listaTarefasConcluidas.appendChild(tarefaItem);
+					});
+				}
+			}
+
+			function atualizarContadores() {
+				const tarefasPendentes = tarefas.filter((t) => !t.concluida);
+				const tarefasConcluidas = tarefas.filter((t) => t.concluida);
+
+				const totalPendentes = tarefasPendentes.length;
+				const totalConcluidas = tarefasConcluidas.length;
+
+				contador.textContent = `${totalPendentes} ${
+					totalPendentes === 1 ? 'tarefa' : 'tarefas'
+				}`;
+
+				contadorConcluidas.textContent = `${totalConcluidas} ${
+					totalConcluidas === 1
+						? 'tarefa concluída'
+						: 'tarefas concluídas'
 				}`;
 			}
 
